@@ -1,7 +1,7 @@
 
 ---
 
-## 📊 **TokenizeLocal: Updated Technical Documentation**
+## 📊 **TokenizeLocal**
 
 ---
 
