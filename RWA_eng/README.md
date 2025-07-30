@@ -1,14 +1,15 @@
-```markdown
+
 ---
+
 ## 📊 **TokenizeLocal: Updated Technical Documentation**
 
 ---
 
-### 🔍 General Description
+### 🔍 Overview
 
-**TokenizeLocal** is a platform for tokenizing local businesses, enabling users to purchase digital tokens representing a stake in a real business.
+**TokenizeLocal** is a platform for tokenizing local businesses, allowing users to purchase digital tokens representing a share in a real business.
 
-Each token entitles the holder to **monthly dividends**, proportional to the company’s revenue.
+Each token grants the right to **monthly dividends**, proportional to the company's revenue.
 
 ---
 
@@ -22,24 +23,27 @@ Each token entitles the holder to **monthly dividends**, proportional to the com
     B --> G[UserManager]
     B --> H[Logger]
 
+
 ---
 
-### 🔄 Main Data Flow
+### 🔄 Data Flow
+
 
     [User] -->|/start| [Role Selection: User / Company]
     -->|User| [Registration / Login]
     --> [View Companies]
-    --> [Buy Tokens]
-    --> [Check Balance and Dividends]
+    --> [Purchase Tokens]
+    --> [View Balance & Dividends]
 
-    [Company] --> [Enter INN]
+    [Company] --> [Enter Tax ID (INN)]
     --> [Verification via Checko API]
     --> [Token Issuance in DB]
     --> [Monthly Revenue Update]
     --> [Dividend Payout]
 
     [Data] --> [Stored in database.sqlite]
-    --> [Can be viewed via records_check.py]
+    --> [Viewable via records_check.py]
+
 
 ---
 
@@ -48,19 +52,19 @@ Each token entitles the holder to **monthly dividends**, proportional to the com
 #### 3.1. **Database System (SQLite)**
 
 All data is stored in `blockchain/database.sqlite`.  
-Tables are created on first launch via the `_initialize_tables()` method.
+Tables are created on first launch via `_initialize_tables()`.
 
 ##### Tables:
 
 | Name | Fields |
-|------|--------|
+|--------|------|
 | `businesses` | `inn` (PRIMARY KEY), `name` |
 | `token_issuances` | `business_inn` (PRIMARY KEY), `amount`, `issued_at` |
 | `users` | `id`, `name`, `email` (UNIQUE), `password` |
 | `user_tokens` | `id`, `email`, `business_inn`, `tokens` (UNIQUE: email + business_inn) |
 | `dividend_history` | `id`, `business_inn`, `distribution_date`, `total_revenue`, `dividend_pool`, `token_price` |
 
-> ⚠️ **Note**: In the current implementation, passwords are stored in plain text. For production, `bcrypt` hashing is recommended.
+> ⚠️ **Note**: In the current implementation, passwords are stored in plaintext. For production, use `bcrypt`.
 
 ---
 
@@ -69,9 +73,9 @@ Tables are created on first launch via the `_initialize_tables()` method.
 | Class | Responsibility |
 |------|----------------|
 | `UserManager` | Registration, authentication, email validation |
-| `DBManager` | CRUD operations: businesses, tokens, balances, dividends |
-| `FinancialAPIClient` | Company verification by INN via Checko API |
-| `TelegramBotHandler` | Command, state, role, and help handling |
+| `DBManager` | CRUD operations: companies, tokens, balances, dividends |
+| `FinancialAPIClient` | Company verification via Checko API using Tax ID (INN) |
+| `TelegramBotHandler` | Command handling, state management, role-based prompts |
 
 ---
 
@@ -79,39 +83,41 @@ Tables are created on first launch via the `_initialize_tables()` method.
 
 #### 4.1. Data Flow
 
+
     main[main.py] --> role{Role: user / company?}
     role -- user --> auth[Authentication via UserManager]
-    auth --> companies[List of companies from get_all_issuances()]
-    companies --> buy[Buy tokens via add_user_tokens()]
-    buy --> balance[Display balance via get_user_tokens()]
+    auth --> companies[Company list from get_all_issuances()]
+    companies --> buy[Token purchase via add_user_tokens()]
+    buy --> balance[Balance display via get_user_tokens()]
 
     role -- company --> checko[Verification via Checko API]
     checko --> issue[Token issuance via issue_tokens()]
     issue --> update[Monthly revenue update]
     update --> dividends[distribute_dividends() → dividend payout]
 
+
 ---
 
 ### 5. Company Workflow
 
-1. Company starts the bot and selects the **"Company"** role.
-2. Enters **INN** (10 or 12 digits).
-3. Bot verifies the company via **Checko API**.
-4. If status is **"Active"**, the company can **issue tokens**.
-5. Token amount is **not limited by revenue** (initially), but the logic is in place.
-6. Company can **update revenue monthly** and trigger `distribute_dividends()`.
+1. The company launches the bot and selects the **"Company"** role.
+2. Enters its **Tax ID (INN)** (10 or 12 digits).
+3. The bot verifies the company via **Checko API**.
+4. If the status is **"Active"**, the company can **issue tokens**.
+5. The number of tokens is **not limited by revenue** (initially), but logic is in place.
+6. The company can **update revenue monthly** and trigger `distribute_dividends()`.
 
 ---
 
 ### 6. User Workflow
 
-1. User selects the **"User"** role.
+1. The user selects the **"User"** role.
 2. Registers (name, email, password) or logs in.
 3. Views the list of companies.
-4. Buys tokens from one or more companies.
-5. Views balance and dividend history.
+4. Purchases tokens from one or multiple companies.
+5. Checks balance and dividend history.
 
-> ✅ **Important**: User email is `user_id@telegram.local` to avoid dependency on manual input.
+> ✅ **Important**: The user's email is `user_id@telegram.local` to avoid manual input.
 
 ---
 
@@ -124,48 +130,48 @@ def distribute_dividends(self, inn: str, revenue: float, dividend_percentage: fl
     for user_email, tokens in user_tokens:
         user_share = tokens / total_tokens
         user_dividend = user_share * dividend_pool
-        # Record to history
+        # Record in history
 ```
 
-- Dividends are paid in **fiat units (e.g., $)**.
-- Future support for **USDT, USDC** is planned.
+- Dividends are paid in **nominal units (e.g., $)**.
+- Planned support for **USDT, USDC**.
 
 ---
 
-### 8. Scaling Roadmap
+### 8. Scaling Plan
 
 | Direction | Implementation |
-|---------|----------------|
+|-----------|-----------|
 | REST API | FastAPI / Flask |
 | GUI Interface | Streamlit / React |
-| DAO Governance | Voting in DB or via Snapshot |
+| DAO Governance | Voting via DB or Snapshot |
 | Secondary Token Market | Resale between users |
 | Blockchain Integration | web3.py + smart contracts |
 | Oracles | Pyth Network / Chainlink |
 | USDT / USDC Support | For dividend stability |
-| Automated Dividend Issuance | Via cron or Airflow |
+| Automated Dividend Payouts | Cron or Airflow |
 | Password Hashing | bcrypt / passlib |
 | Transaction History | `dividend_history` table |
 
 ---
 
-### 9. Global API Support for Business Verification
+### 9. Global Business Verification APIs
 
 | Country | Identifier | API |
-|--------|------------|-----|
+|-------|--------------|-----|
 | Russia | INN | Checko |
 | USA | EIN | Dun & Bradstreet |
 | EU | VAT ID | VIES |
 | Global | Company ID | OpenCorporates |
 
-> ✅ Currently supports only **Checko (Russia)**.
+> ✅ Only **Checko (Russia)** is supported initially.
 
 ---
 
 ### 10. Multi-Currency Support
 
 | Supported Currencies | Description |
-|----------------------|-----------|
+|----------------------|--------|
 | RUB | Russian Ruble |
 | USD | US Dollar |
 | EUR | Euro |
@@ -174,31 +180,31 @@ def distribute_dividends(self, inn: str, revenue: float, dividend_percentage: fl
 | ETH | Ethereum |
 | BTC | Bitcoin |
 
-> ✅ At launch — only RUB and USD.
+> ✅ Initially, only RUB and USD are supported.
 
 ---
 
 ### 11. Current Status
 
 | Feature | Status |
-|--------|--------|
+|--------|-----------|
 | Registration / Login | ✅ |
 | Token Issuance | ✅ |
 | Token Purchase | ✅ |
-| Balance and History | ✅ |
+| Balance & History | ✅ |
 | Dividends | ✅ |
 | Company Verification | ✅ (Checko) |
 | Roles (User/Company) | ✅ |
-| Dynamic Help Messages | ✅ |
+| Dynamic Prompts | ✅ |
 | SQLite Storage | ✅ |
 
 ---
 
 ### 12. Telegram Bot User Guide
 
-#### 📱 How to Start
+#### 📱 Getting Started
 
-1. Open Telegram and find the bot `@TokenizeLocalBot`.
+1. Open Telegram and search for `@TokenizeLocalBot`.
 2. Click **"Start"** or type `/start`.
 
 ---
@@ -206,10 +212,10 @@ def distribute_dividends(self, inn: str, revenue: float, dividend_percentage: fl
 #### 🔀 Role Selection
 
 The bot will prompt you to choose:
-- **👤 User** — to buy tokens.
-- **🏢 Company** — to issue tokens.
+- **👤 User** — for purchasing tokens.
+- **🏢 Company** — for issuing tokens.
 
-> 💡 After selection, the bot will show **relevant commands**.
+> 💡 After selection, the bot shows **role-specific commands**.
 
 ---
 
@@ -217,11 +223,11 @@ The bot will prompt you to choose:
 
 | Command | Action |
 |--------|--------|
-| `/register` | Registration: enter name, email, and password separated by spaces |
-| `/login` | Login: enter email and password separated by space |
+| `/register` | Register: enter name, email, and password separated by spaces |
+| `/login` | Login: enter email and password separated by spaces |
 | `/companies` | View all companies and available tokens |
-| `/buy` | Buy tokens: enter number and quantity |
-| `/balance` | View current token balance |
+| `/buy` | Buy tokens: select company number and quantity |
+| `/balance` | View current token holdings |
 | `/dividends` | View dividend history |
 | `/help` | Command help |
 
@@ -231,11 +237,11 @@ The bot will prompt you to choose:
 
 | Command | Action |
 |--------|--------|
-| `/issue_tokens` | Issue tokens: enter INN and amount |
+| `/issue_tokens` | Issue tokens: enter Tax ID (INN) and quantity |
 | `/help` | Command help |
-| `/start` | Restart the bot |
+| `/start` | Restart |
 
-> 💡 To restart at any time — type `/start`.
+> 💡 To restart, type `/start`.
 
 ---
 
@@ -260,7 +266,7 @@ user@example.com 123456
 1000
 ```
 
-**Buying Tokens:**
+**Token Purchase:**
 ```
 /buy
 1 50
@@ -270,27 +276,27 @@ user@example.com 123456
 
 #### ⚠️ Important Notes
 
-- **All user tokens are isolated** — using `user_id@telegram.local`.
-- **Help messages are role-specific** — companies only see `/issue_tokens` and `/help`.
+- **User tokens are isolated** — `user_id@telegram.local` is used.
+- **Prompts adapt to roles** — companies only see `/issue_tokens` and `/help`.
 - **Error `Can't parse entities`** — fixed by removing `parse_mode="Markdown"`.
-- **Passwords are stored in plain text** — acceptable for demo. In production — must be hashed.
-- **Dividends are calculated by the formula:**
+- **Passwords are stored in plaintext** — for demo. Use hashing in production.
+- **Dividend formula:**
   ```
-  Dividend per token = (Revenue × 10%) / Total number of tokens
+  Dividend per token = (Revenue × 10%) / Total tokens
   ```
 
 ---
 
 ### 13. Technical Acceptance Criteria (TAC)
 
-| № | Criterion | Completion Indicator |
+| # | Criterion | Completion Sign |
 |---|---------|------------------|
-| 1 | Company Registration | ✔️ Ability to register via INN |
-| 2 | Company Verification via API | ✔️ Successful request and status retrieval |
+| 1 | Company Registration | ✔️ Ability to register via Tax ID (INN) |
+| 2 | Company Verification via API | ✔️ Successful API request and status retrieval |
 | 3 | Token Issuance by Company | ✔️ Tokens recorded in `token_issuances` |
-| 4 | Balance Update After Purchase | ✔️ `user_tokens` updated correctly |
-| 5 | Balance Viewing | ✔️ `/balance` command works properly |
-| 6 | Dynamic Help Messages | ✔️ Different commands for different roles |
+| 4 | Balance Update After Purchase | ✔️ `user_tokens` updated |
+| 5 | Balance View | ✔️ `/balance` command works correctly |
+| 6 | Dynamic Prompts | ✔️ Different commands for different roles |
 | 7 | Token Purchase | ✔️ Tokens deducted from company, credited to user |
 | 8 | Dividend Payout | ✔️ `distribute_dividends()` updates history |
 | 9 | Event Logging | ✔️ All actions logged via `Logger` |
@@ -298,11 +304,12 @@ user@example.com 123456
 
 ---
 
-### ✅ Current Status and Launch Plan
+### ✅ Current Status & Launch Plan
 
 - **Prototype**: Fully functional
-- **API**: Checko (Russia), only companies with "Active" status and financial reports are allowed. Similar procedures planned for international companies via API.
-- **Features**: registration, issuance, purchase, balance, dividends
-- **Beta version**: Ready to launch within **1 month**
-- **Target group**: 10 companies, 100 investors
+- **API**: Checko (Russia)
+- **Features**: Registration, issuance, purchase, balance, dividends
+- **Beta Version**: Ready for launch within **1 month**
+- **Target Audience**: 10 companies, 100 investors
+
 ---
