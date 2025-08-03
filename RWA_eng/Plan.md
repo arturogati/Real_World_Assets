@@ -109,7 +109,7 @@ TokenizeLocal is a platform that enables small and medium-sized businesses to at
 | Premium Listing | $500–$1,000 |
 | Analytics | $10–$50/month |
 | Affiliate Program | 2–5% per referral |
-
+| Lending capability by the platform | The platform can provide loans to organizations under preferential terms for dividend payments during the initial period
 ---
 
 ## 🌍 **8. Support for International Businesses**
@@ -233,4 +233,5 @@ As the business grows, token value increases, allowing investors to sell at a pr
 | 💡 Innovative Approach | Tokenizing SMBs — a new market |
 | 🧠 Transparency | All data is open |
 | 📊 Scalability | From MVP to decentralized ecosystem |
+
 ---
