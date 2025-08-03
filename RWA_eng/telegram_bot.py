@@ -21,7 +21,7 @@ from utils.logger import Logger
 logger = Logger("TokenizeLocalBot")
 
 # Tokens
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8184934106:AAElcn4Y28rFjvUOeg83XHxKgJzOoptpvjI")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 CHECKO_API_KEY = os.getenv("CHECKO_API_KEY", "yCEWUepinagwBCn3")
 
 
@@ -340,4 +340,5 @@ def run_bot():
     application.run_polling()
 
 if __name__ == "__main__":
+
     run_bot()
